@@ -1,0 +1,137 @@
+# Default values for opscode
+namespace:
+  create: true
+  name: opscode
+
+replicaCount: 2
+
+image:
+  repository: python-k8s-opscode
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+service:
+  type: ClusterIP
+  port: 80
+  metricsPort: 9090
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 85
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - opscode
+        topologyKey: kubernetes.io/hostname
+
+# Application configuration
+config:
+  appName: opscode
+  appVersion: 0.1.0
+  environment: production
+  apiHost: 0.0.0.0
+  apiPort: 8000
+  apiPrefix: /api/v1
+  kubernetesTimeout: 30
+  kubernetesRetryCount: 3
+  kubernetesRetryBackoff: 2
+  workloadDiscoveryInterval: 60
+  healthCheckInterval: 30
+  incidentCheckInterval: 60
+  cpuThresholdPercent: 80.0
+  memoryThresholdPercent: 85.0
+  restartThreshold: 5
+  errorRateThreshold: 5.0
+  replicaShortageThreshold: 1
+  remediationEnabled: true
+  remediationDryRun: false
+  remediationMaxRetries: 3
+  remediationCooldownSeconds: 300
+  remediationAllowedNamespaces: default,staging,production
+  logLevel: INFO
+  logFormat: json
+  prometheusEnabled: true
+  prometheusPort: 9090
+  metricsPath: /metrics
+
+# Secrets (should be overridden with helm --set or values files)
+secrets:
+  secretKey: change-this-secret-key-in-production
+  databaseUrl: postgresql+asyncpg://opscode:opscode@postgres:5432/opscode
+  redisUrl: redis://redis:6379/0
+
+# External dependencies
+postgresql:
+  enabled: false
+  # If disabled, you need to provide external database credentials
+  host: ""
+  port: 5432
+  database: opscode
+  username: opscode
+  password: opscode
+
+redis:
+  enabled: false
+  # If disabled, you need to provide external redis credentials
+  host: ""
+  port: 6379
+  database: 0
+
+# Monitoring
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+
+grafana:
+  enabled: true
+  dashboard:
+    enabled: true

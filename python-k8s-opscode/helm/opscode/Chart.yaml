@@ -1,0 +1,15 @@
+apiVersion: v2
+name: opscode
+description: Kubernetes Operations Platform - Automated monitoring, incident detection, and remediation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kubernetes
+  - operations
+  - monitoring
+  - remediation
+  - automation
+maintainers:
+  - name: Leena Sri
+    email: leena@example.com

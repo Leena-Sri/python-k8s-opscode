@@ -1,0 +1,9 @@
+{{- if .Values.namespace.create }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace.name | default "opscode" }}
+  labels:
+    name: {{ .Values.namespace.name | default "opscode" }}
+    app: {{ include "opscode.name" . }}
+{{- end }}

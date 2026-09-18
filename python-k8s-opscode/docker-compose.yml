@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: opscode-postgres
+    environment:
+      POSTGRES_DB: opscode
+      POSTGRES_USER: opscode
+      POSTGRES_PASSWORD: opscode
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opscode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opscode-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: opscode-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opscode-network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: opscode-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - opscode-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: opscode-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - opscode-network
+
+  # Opscode Application
+  opscode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opscode-app
+    ports:
+      - "8000:8000"
+      - "9091:9090"
+    environment:
+      APP_NAME: opscode
+      APP_VERSION: 0.1.0
+      ENVIRONMENT: development
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      SECRET_KEY: development-secret-key-change-in-production
+      DATABASE_URL: postgresql+asyncpg://opscode:opscode@postgres:5432/opscode
+      REDIS_URL: redis://redis:6379/0
+      KUBERNETES_TIMEOUT: 30
+      KUBERNETES_RETRY_COUNT: 3
+      REMEDIATION_ENABLED: true
+      REMEDIATION_DRY_RUN: true
+      REMEDIATION_MAX_RETRIES: 3
+      REMEDIATION_COOLDOWN_SECONDS: 300
+      REMEDIATION_ALLOWED_NAMESPACES: default,staging
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      PROMETHEUS_ENABLED: true
+      PROMETHEUS_PORT: 9090
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - opscode-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  opscode-network:
+    driver: bridge

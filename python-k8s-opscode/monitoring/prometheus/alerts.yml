@@ -1,0 +1,83 @@
+groups:
+  - name: opscode_alerts
+    interval: 30s
+    rules:
+      # High incident rate
+      - alert: HighIncidentRate
+        expr: rate(opscode_incidents_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High incident rate detected"
+          description: "Incident rate is {{ $value }} incidents per second"
+
+      # Too many open critical incidents
+      - alert: TooManyCriticalIncidents
+        expr: opscode_incidents_open{severity="CRITICAL"} > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Too many critical incidents open"
+          description: "{{ $value }} critical incidents are currently open"
+
+      # High remediation failure rate
+      - alert: HighRemediationFailureRate
+        expr: rate(opscode_remediation_failures_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High remediation failure rate"
+          description: "Remediation failure rate is {{ $value }} per second"
+
+      # Too many unhealthy workloads
+      - alert: TooManyUnhealthyWorkloads
+        expr: opscode_workloads_unhealthy > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many unhealthy workloads"
+          description: "{{ $value }} workloads are currently unhealthy"
+
+      # Application down
+      - alert: ApplicationDown
+        expr: up{job="opscode"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Opscode application is down"
+          description: "The Opscode application has been down for more than 2 minutes"
+
+      # High API error rate
+      - alert: HighAPIErrorRate
+        expr: rate(opscode_api_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ $value }} errors per second"
+
+      # Slow API response time
+      - alert: SlowAPIResponseTime
+        expr: histogram_quantile(0.95, rate(opscode_api_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API response time"
+          description: "95th percentile API response time is {{ $value }} seconds"
+
+      # Database connection issues
+      - alert: DatabaseConnectionHigh
+        expr: opscode_db_connections_active > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection count"
+          description: "{{ $value }} active database connections"

@@ -1,0 +1,49 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "opscode.fullname" . }}
+  namespace: {{ .Values.namespace.name | default "opscode" }}
+  labels:
+    {{- include "opscode.labels" . | nindent 4 }}
+rules:
+  # Allow reading workloads
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "replicationcontrollers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  # Allow restart and scale operations
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  # Allow reading pod logs
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
+  # Allow reading pod status
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "opscode.fullname" . }}
+  namespace: {{ .Values.namespace.name | default "opscode" }}
+  labels:
+    {{- include "opscode.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "opscode.serviceAccountName" . }}
+    namespace: {{ .Values.namespace.name | default "opscode" }}
+roleRef:
+  kind: Role
+  name: {{ include "opscode.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "opscode.fullname" . }}-config
+  namespace: {{ .Values.namespace.name | default "opscode" }}
+  labels:
+    {{- include "opscode.labels" . | nindent 4 }}
+data:
+  APP_NAME: {{ .Values.config.appName | quote }}
+  APP_VERSION: {{ .Values.config.appVersion | quote }}
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  API_HOST: {{ .Values.config.apiHost | quote }}
+  API_PORT: {{ .Values.config.apiPort | quote }}
+  API_PREFIX: {{ .Values.config.apiPrefix | quote }}
+  KUBERNETES_TIMEOUT: {{ .Values.config.kubernetesTimeout | quote }}
+  KUBERNETES_RETRY_COUNT: {{ .Values.config.kubernetesRetryCount | quote }}
+  KUBERNETES_RETRY_BACKOFF: {{ .Values.config.kubernetesRetryBackoff | quote }}
+  WORKLOAD_DISCOVERY_INTERVAL: {{ .Values.config.workloadDiscoveryInterval | quote }}
+  HEALTH_CHECK_INTERVAL: {{ .Values.config.healthCheckInterval | quote }}
+  INCIDENT_CHECK_INTERVAL: {{ .Values.config.incidentCheckInterval | quote }}
+  CPU_THRESHOLD_PERCENT: {{ .Values.config.cpuThresholdPercent | quote }}
+  MEMORY_THRESHOLD_PERCENT: {{ .Values.config.memoryThresholdPercent | quote }}
+  RESTART_THRESHOLD: {{ .Values.config.restartThreshold | quote }}
+  ERROR_RATE_THRESHOLD: {{ .Values.config.errorRateThreshold | quote }}
+  REPLICA_SHORTAGE_THRESHOLD: {{ .Values.config.replicaShortageThreshold | quote }}
+  REMEDIATION_ENABLED: {{ .Values.config.remediationEnabled | quote }}
+  REMEDIATION_DRY_RUN: {{ .Values.config.remediationDryRun | quote }}
+  REMEDIATION_MAX_RETRIES: {{ .Values.config.remediationMaxRetries | quote }}
+  REMEDIATION_COOLDOWN_SECONDS: {{ .Values.config.remediationCooldownSeconds | quote }}
+  REMEDIATION_ALLOWED_NAMESPACES: {{ .Values.config.remediationAllowedNamespaces | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.config.logFormat | quote }}
+  PROMETHEUS_ENABLED: {{ .Values.config.prometheusEnabled | quote }}
+  PROMETHEUS_PORT: {{ .Values.config.prometheusPort | quote }}
+  METRICS_PATH: {{ .Values.config.metricsPath | quote }}

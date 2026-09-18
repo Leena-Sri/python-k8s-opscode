@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opscode-config
+  namespace: opscode
+  labels:
+    app: opscode
+data:
+  # Application configuration
+  APP_NAME: "opscode"
+  APP_VERSION: "0.1.0"
+  ENVIRONMENT: "production"
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_PREFIX: "/api/v1"
+
+  # Kubernetes configuration
+  KUBERNETES_TIMEOUT: "30"
+  KUBERNETES_RETRY_COUNT: "3"
+  KUBERNETES_RETRY_BACKOFF: "2"
+
+  # Monitoring intervals
+  WORKLOAD_DISCOVERY_INTERVAL: "60"
+  HEALTH_CHECK_INTERVAL: "30"
+  INCIDENT_CHECK_INTERVAL: "60"
+
+  # Health thresholds
+  CPU_THRESHOLD_PERCENT: "80.0"
+  MEMORY_THRESHOLD_PERCENT: "85.0"
+  RESTART_THRESHOLD: "5"
+  ERROR_RATE_THRESHOLD: "5.0"
+  REPLICA_SHORTAGE_THRESHOLD: "1"
+
+  # Remediation settings
+  REMEDIATION_ENABLED: "true"
+  REMEDIATION_DRY_RUN: "false"
+  REMEDIATION_MAX_RETRIES: "3"
+  REMEDIATION_COOLDOWN_SECONDS: "300"
+
+  # Allowed namespaces for remediation
+  REMEDIATION_ALLOWED_NAMESPACES: "default,staging,production"
+
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+
+  # Prometheus
+  PROMETHEUS_ENABLED: "true"
+  PROMETHEUS_PORT: "9090"
+  METRICS_PATH: "/metrics"

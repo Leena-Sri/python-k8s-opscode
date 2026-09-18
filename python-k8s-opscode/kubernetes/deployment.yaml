@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opscode
+  namespace: opscode
+  labels:
+    app: opscode
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: opscode
+  template:
+    metadata:
+      labels:
+        app: opscode
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: opscode
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: opscode
+        image: python-k8s-opscode:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: APP_NAME
+        - name: APP_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: APP_VERSION
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: ENVIRONMENT
+        - name: API_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: API_HOST
+        - name: API_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: API_PORT
+        - name: KUBERNETES_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: KUBERNETES_TIMEOUT
+        - name: KUBERNETES_RETRY_COUNT
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: KUBERNETES_RETRY_COUNT
+        - name: REMEDIATION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: REMEDIATION_ENABLED
+        - name: REMEDIATION_DRY_RUN
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: REMEDIATION_DRY_RUN
+        - name: REMEDIATION_MAX_RETRIES
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: REMEDIATION_MAX_RETRIES
+        - name: REMEDIATION_COOLDOWN_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: REMEDIATION_COOLDOWN_SECONDS
+        - name: REMEDIATION_ALLOWED_NAMESPACES
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: REMEDIATION_ALLOWED_NAMESPACES
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: opscode-secrets
+              key: SECRET_KEY
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: opscode-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: opscode-secrets
+              key: REDIS_URL
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: LOG_LEVEL
+        - name: LOG_FORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: LOG_FORMAT
+        - name: PROMETHEUS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: opscode-config
+              key: PROMETHEUS_ENABLED
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - opscode
+              topologyKey: kubernetes.io/hostname
